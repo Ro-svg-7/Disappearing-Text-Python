@@ -1,5 +1,4 @@
 from tkinter import *
-from tkinter import messagebox
 import random
 
 timer = None
@@ -100,18 +99,54 @@ def stop_bar():
     bar_width = 0
     timer_canvas.coords(progress_bar, 0,0,0,8)
 
+def type_death_message():
+    message = "Your words have been devoured by the RoMonster!"
+    text_area.configure(state=NORMAL, fg="#ff2222")
+
+    def fade_message(step=0):
+        reds=["#ff2222", "#dd1111", "#bb0000", "#990000",
+            "#770000", "#550000", "#330000", "#110000"]
+
+        if step < len(reds):
+            text_area.configure(fg=reds[step])
+            text_area.after(120, lambda: fade_message( step + 1))
+        else:
+            text_area.configure(fg="#110000")
+        
+    def type_char(i):
+        if i < len(message):
+            text_area.insert(END, message[i])
+            text_area.after(80, lambda: type_char( i + 1))
+        else:
+            fade_message()
+            
+    type_char(0)
+
 def delete_text():
+    global timer
     stop_bar()
     reset_corruption()
+    timer=None
+
+    text_area.configure(bg="#111111", fg="#ff2222", state=NORMAL)
     text_area.delete("1.0", END)
-    messagebox.showinfo("Time's Up!", "Your time is up! All your progress has been lost.")
+
+    text_area.after(400, type_death_message)
+
+    def on_restart(event):
+        text_area.configure(bg="gray", fg="white", state=NORMAL)
+        text_area.delete("1.0", END)
+        text_area.bind("<KeyPress>", on_key_press)
+
+    text_area.bind("<KeyPress>", on_restart)
 
 def idle_tick():
     global idle_time, corruption_after_id
     idle_time += 50
 
 def start_countdown():
-    global timer
+    global timer, idle_time
+    idle_time = 0
     stop_bar()
     update_bar()
     run_corruption()
