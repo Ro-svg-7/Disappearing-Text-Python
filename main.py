@@ -1,11 +1,14 @@
 from tkinter import *
 from tkinter import messagebox
+import random
 
 timer = None
 progress = 0
 bar_width = 0
 start_delay = None
 bar_after_id = None
+corruption_after_id = None
+idle_time = 0
 
 window = Tk()
 window.title("Dangerous Writing App")
@@ -26,6 +29,60 @@ text_area = Text(writing_frame, bg="grey", fg="white",
 
 text_area.pack(fill="both", expand=True)
 
+#-----------------------------CORRUPTION PHASE-----------------------------#
+def lerp_color(start_rgb, end_rgb, t):
+    r = int(start_rgb[0] + (end_rgb[0] - start_rgb[0])*t)
+    g = int(start_rgb[1] + (end_rgb[1] - start_rgb[1])*t)
+    b = int(start_rgb[2] + (end_rgb[2] - start_rgb[2])*t)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+def reset_corruption():
+    global corruption_after_id
+    if corruption_after_id is not None:
+        window.after_cancel(corruption_after_id)
+        corruption_after_id = None
+    text_area.configure(bg="grey")
+
+    x =  window.winfo_x()
+    y = window.winfo_y()
+    window.geometry(f"+{x}+{y}")
+
+def run_corruption():
+    global corruption_after_id, idle_time
+
+    idle_time += 50
+
+    t = min(idle_time / 5000, 1.0)
+
+    #Phase 1
+    if t < 0.4:
+        phase_t = t/0.4
+        color = lerp_color((128,128,128), (122, 64,64), phase_t)
+        text_area.configure(bg=color)
+    
+    #Phase 2
+    elif t < 0.8:
+        phase_t = (t-0.4)/0.4
+        color = lerp_color((122,64,64),(107,0,0),phase_t)
+        text_area.configure(bg=color)
+
+    #Phase 3
+    else:
+        phase_t = (t-0.8)/0.2
+        if int(idle_time/150)%2 == 0:
+            color = lerp_color((107,0,0),(180,0,0),phase_t)
+        else:
+            color = lerp_color((180,0,0),(60,0,0),phase_t)
+        text_area.configure(bg=color)
+
+        shake_x = random.randint(-6,6)
+        shake_y = random.randint(-4,4)
+        x = window.winfo_x() + shake_x
+        y = window.winfo_y() + shake_y
+        window.geometry(f"+{x}+{y}")
+    
+    corruption_after_id = window.after(50, run_corruption)
+
 def update_bar():
     global bar_width, bar_after_id
 
@@ -45,17 +102,23 @@ def stop_bar():
 
 def delete_text():
     stop_bar()
+    reset_corruption()
     text_area.delete("1.0", END)
     messagebox.showinfo("Time's Up!", "Your time is up! All your progress has been lost.")
+
+def idle_tick():
+    global idle_time, corruption_after_id
+    idle_time += 50
 
 def start_countdown():
     global timer
     stop_bar()
     update_bar()
+    run_corruption()
     timer = window.after(5000, delete_text)
 
 def on_key_press(event):
-    global timer, start_delay
+    global timer, start_delay, idle_time
 
     #Cancel 5sec delete timer
     if timer is not None:
@@ -67,7 +130,9 @@ def on_key_press(event):
         window.after_cancel(start_delay)
         start_delay = None
 
+    idle_time = 0
     stop_bar()
+    reset_corruption()
 
     start_delay = window.after(300, start_countdown)
     
