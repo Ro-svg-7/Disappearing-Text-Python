@@ -165,8 +165,8 @@ def start_countdown():
     idle_time = 0
     stop_bar()
     update_bar()
-    run_corruption()
     timer = window.after(5000, delete_text)
+    run_corruption()
 
 #-----------------------------MANAGES EVENTS WHEN USER TYPES-----------------------------#
 
