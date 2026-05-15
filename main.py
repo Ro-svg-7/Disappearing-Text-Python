@@ -110,7 +110,8 @@ def stop_bar():
 #-----------------------------DRAMATIC MESSAGE-----------------------------#
 
 def type_death_message():
-    message = "Your words have been devoured by the RoMonster!"
+    message = "Your words have been devoured by the RoMonster! \n" \
+    "Try Again By Typing Again. Be Careful."
     text_area.configure(state=NORMAL, fg="#ff2222")
 
     def fade_message(step=0):
@@ -172,6 +173,9 @@ def start_countdown():
 
 def on_key_press(event):
     global timer, start_delay, idle_time
+
+    if not event.char or event.char == "":
+        return 
 
     #Cancel 5sec delete timer
     if timer is not None:
